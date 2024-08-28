@@ -1,0 +1,108 @@
+import random
+import os
+import time
+import sys
+
+# Oyun alanının boyutları
+WIDTH = 40
+HEIGHT = 10
+# Kuşun başlangıç pozisyonu
+bird_pos = HEIGHT // 2
+# Kuşun hareket hızı
+bird_velocity = 0
+# Yerçekimi
+gravity = 0.1
+# Zıplama gücü
+jump_strength = -0.5
+# Engeller
+obstacles = []
+obstacle_speed = 0.2
+obstacle_width = 5
+obstacle_gap = 3
+score = 0
+game_over = False
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def print_game():
+    global bird_pos, obstacles, WIDTH, HEIGHT, score
+
+    clear_screen()
+    # Oyun alanını oluştur
+    for y in range(HEIGHT):
+        line = ""
+        for x in range(WIDTH):
+            # Kuşun pozisyonunu çiz
+            if x == 2 and y == int(bird_pos):
+                line += "O"
+            # Engelleri çiz
+            elif any(obstacle[0] <= x < obstacle[0] + obstacle_width and
+                     (y < obstacle[1] or y >= obstacle[1] + obstacle_gap) for obstacle in obstacles):
+                line += "#"
+            else:
+                line += " "
+        print(line)
+    
+    print(f"Score: {score}")
+
+def update_game():
+    global bird_pos, bird_velocity, obstacles, obstacle_speed, score, game_over
+
+    # Kuşun hareketini güncelle
+    bird_velocity += gravity
+    bird_pos += bird_velocity
+    
+    # Kuşun ekran dışına çıkmasını engelle
+    if bird_pos < 0:
+        bird_pos = 0
+        bird_velocity = 0
+    elif bird_pos >= HEIGHT:
+        bird_pos = HEIGHT - 1
+        bird_velocity = 0
+    
+    # Engelleri hareket ettir
+    new_obstacles = []
+    for obstacle in obstacles:
+        obstacle[0] -= obstacle_speed
+        if obstacle[0] + obstacle_width > 0:
+            new_obstacles.append(obstacle)
+        # Engelin geçişini kontrol et
+        if obstacle[0] == 0:
+            score += 1
+    obstacles = new_obstacles
+    
+    # Yeni engel ekle
+    if random.random() < 0.02:
+        gap_y = random.randint(1, HEIGHT - obstacle_gap - 1)
+        obstacles.append([WIDTH, gap_y])
+    
+    # Çarpışma kontrolü
+    for obstacle in obstacles:
+        if obstacle[0] <= 2 < obstacle[0] + obstacle_width and \
+           (bird_pos < obstacle[1] or bird_pos >= obstacle[1] + obstacle_gap):
+            game_over = True
+
+def main():
+    global game_over
+
+    print("Flappy Bird - Metin Tabanlı Versiyon")
+    print("Zıplamak için 'w' tuşuna basın, çıkmak için 'q' tuşuna basın.")
+
+    while not game_over:
+        # Oyun durumunu güncelle
+        update_game()
+        # Oyun ekranını yazdır
+        print_game()
+        # Kullanıcı girişi al
+        user_input = input().strip().lower()
+        if user_input == 'w':
+            bird_velocity = jump_strength
+        elif user_input == 'q':
+            break
+    
+    print("Oyun bitti!")
+    print(f"Final Score: {score}")
+
+if __name__ == "__main__":
+    main()
